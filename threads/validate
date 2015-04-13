@@ -1,0 +1,2 @@
+#!/bin/bash
+awk '($1 ~ /[0-9]+/) && ($1 != seq+1) { print "Out of sequence: ", $1, $2, $3} ($1 ~ /[0-9]+/)  { seq = $1 } ($1 == "Found") && (seq != $2) { print "Found",$2,"items. Expected", seq } END { print "validation done"}'  $1

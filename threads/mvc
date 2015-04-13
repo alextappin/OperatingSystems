@@ -1,0 +1,5 @@
+make clean
+make
+time ./listtest2 10 1000 > out
+./validate out > out2
+wc -l out2
