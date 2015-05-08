@@ -1,0 +1,2 @@
+stacklc -boot system.c
+stackl system
