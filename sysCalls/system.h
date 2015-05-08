@@ -12,25 +12,17 @@ int main();
 int do_out(int *ptr);
 int do_inp(int op, int param);
 int do_exec(int op, char *param);
-int syscall(int cmd, char *arg);
-
+int syscall(int op, char * value, int param, char * done_flag);
+int send(char * pointer);
+int CheckSend();
 int printS(char *ptr);
 int printI(int num);
 int scanS(int addr);
 int scanI(int addr);
-int exit();
+int exit(int mainValue);
+int exitProg();
 int exec(char *name);
 
 int interrupt();
 int systrap(int cmd, char *arg);
-int startup__()
-{
-    // initialize registers
-    globalReg = PIO_T_RDR;
-    int mainValue;
-    mainValue = main();
-    exec("main");
-    
-    exit(mainValue);
-    return 0;
-}
+int startup__();

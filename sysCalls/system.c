@@ -1,9 +1,5 @@
 #include "system.h"
 
-int send(char * pointer);
-
-
-
 int do_out(int *ptr)
 {
     //transmit
@@ -75,6 +71,7 @@ int do_exec(int op, char *param)
     asm(JMPUSER_OP);
     //GoTo mem address 8
     asm(8); 
+    return 0;
 }
 int CheckSend()
 {
@@ -134,10 +131,9 @@ int syscall(int op, char * value, int param, char * done_flag)
     asm(PUSHREG_OP);
     asm(BP_REG);
     
-    int bp;
+    int baseP;
     
-    // Grab the base pointer
-    bp = asm(NOP);
+    baseP = asm(NOP);
     
     // Push the flag register
     asm(PUSHREG_OP);
@@ -158,8 +154,8 @@ int syscall(int op, char * value, int param, char * done_flag)
     if (flag_reg & FL_USER_MODE)
     {
         // Move value to user's address
-        value += bp;
-        done_flag += bp;
+        value += baseP;
+        done_flag += baseP;
     }
     asm(TRAP_OP);
     if (op == PRINTI_CALL || op == PRINTS_CALL)
@@ -199,11 +195,37 @@ int exit(int mainValue)
     
     return 0;
 }
+int exitProg()
+{
+    syscall(EXIT_CALL);
+    
+    return 0;
+}
 int exec(char * file)
 {
     syscall(EXEC_CALL, file, 0, 0);
     
     return 0;
 }
-
-
+int startup__()
+{
+    // initialize registers
+    globalReg = PIO_T_RDR;
+    //int mainValue;
+    //mainValue = main();
+    //exec("main");
+    //syscall(EXIT_CALL);
+    //exit(mainValue);
+    char buffer[150];
+    int number;
+    printS("Enter in a string: ");
+    scanS(buffer);
+    printS("'");
+    printS(buffer);
+    printS("' was the string that was read in\nNow enter in a number: ");
+    scanI(&number);
+    printS("'");
+    printI(number);
+    printS("' was the number that was read in\nExiting\n");
+    return 0;
+}
