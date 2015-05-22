@@ -1,0 +1,4 @@
+make clean
+make
+./fstest > test/out
+diff test/out test/test4.correct
