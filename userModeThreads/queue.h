@@ -32,7 +32,6 @@ typedef struct
     pthread_mutex_t mutex;
 } queue_t;
 
-void* readCharacters(void* parameter);
 queue_t* startProducer();
 queue_t* initializeQ();
 void queue_insert(queue_t *q, void *data);
