@@ -1,0 +1,5 @@
+make clean
+make
+clear
+./test6 > out
+diff out test6.correct
