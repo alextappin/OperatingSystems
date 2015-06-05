@@ -112,6 +112,7 @@ void mythread_init()
     list_insert_at_head(Thread_List, Current_Thread);
     
     pthread_create(&getThread, NULL, consumer, Io_Blk_Queue);
+    pthread_create(&printThread, NULL, consumer, Print_Blk_Queue);
 }
 //*************************************
 // Can be called to clean up any memory used by thread data structures.
@@ -121,6 +122,7 @@ void mythread_cleanup()
     queue_mark_closed(Ready_Queue);
     queue_mark_closed(Io_Blk_Queue);
     pthread_join(getThread,NULL);
+    pthread_join(printThread,NULL);
     queue_close(Ready_Queue);
     list_close(Thread_List);
     queue_close(Io_Blk_Queue);
@@ -326,9 +328,12 @@ void mythread_io(char* str, int sizeTime, int operationType)
     Io_Blk->number = sizeTime;
     Io_Blk->str = str;
     
-    queue_insert(Io_Blk_Queue, Io_Blk);
-    
-    //need to set the state to iowait so that it doesnt go in the Q and get put back
+    //specific Q for the Mygets
+    if(operationType == MYGETS)
+        queue_insert(Io_Blk_Queue, Io_Blk);
+    else
+        queue_insert(Print_Blk_Queue, Io_Blk);
+    //need to set the state to iowait so that it has a chance to run
     Current_Thread->state = IO_WAIT;
     mythread_yield();
 }
@@ -339,10 +344,8 @@ void* consumer(void* Q)
     while(queue_is_open(queue))
     {
         io_blk *block = queue_remove(queue);
-        //printf("Got %p\n", block);
         if(block != NULL)
         {
-            //printf("Operation %d\n", block->operationType);
             if (block->operationType == MYGETS)
             {
                 fgets(block->str, block->number, stdin);
@@ -355,6 +358,7 @@ void* consumer(void* Q)
                 {
                     //grab from queue and print, then put the thread control block back 
                     printf("%s", block->str);
+                    //or 600000
                     usleep(100000);
                 }
             }
