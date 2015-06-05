@@ -1,3 +1,11 @@
+/**********************
+ * Alexander Tappin
+ * mythreadio
+ * June 2, 2015
+ * Phil Howard
+ * Operating Systems
+**********************/
+
 #include "mythreadio.h"
 
 int myprints(char* str)

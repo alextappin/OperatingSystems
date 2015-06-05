@@ -1,8 +1,10 @@
 //********************************************
 // User mode cooperative thread implementation
 //
-// Author: Phil Howard
-// Email:  phil.howard@oit.edu
+// Author: Alexander Tappin
+//         Phil Howard
+// Email:  alextappin@gmail.com
+//         phil.howard@oit.edu
 //
 
 #include <assert.h>
@@ -15,6 +17,7 @@
 #include "sched.h"
 #include "list.h"
 #include "queue.h"
+#include <time.h>
 
 static const int STACK_SIZE = 1024*1024;
 static unsigned long Next_Thread_Id = 1;
@@ -24,6 +27,7 @@ static unsigned long Next_Thread_Id = 1;
 #define WAIT_JOIN    2
 #define STOPPED      3
 #define IO_WAIT      4
+#define SLEEPING     5
 
 typedef struct thread_s
 {
@@ -37,6 +41,8 @@ typedef struct thread_s
     int  is_detached;
     int  state;
     struct thread_s *waiting_for_me;
+    time_t endTime;
+    time_t startTime;
 } thread_t;
 
 typedef struct io_stuff 
@@ -55,6 +61,9 @@ static queue_t *Io_Blk_Queue;
 static queue_t *Print_Blk_Queue;
 pthread_t getThread;
 pthread_t printThread;
+
+time_t CurrentTime;
+
 //*************************************
 static int Do_Debug = 0;
 static void debug_print(const char *fmt, ...)
@@ -108,7 +117,10 @@ void mythread_init()
     Current_Thread->arg = NULL;
     Current_Thread->is_detached = 1;
     Current_Thread->state = RUNNING;
-
+    Current_Thread->endTime = time(NULL);
+    Current_Thread->startTime = time(NULL);
+    
+    
     list_insert_at_head(Thread_List, Current_Thread);
     
     pthread_create(&getThread, NULL, consumer, Io_Blk_Queue);
@@ -125,9 +137,9 @@ void mythread_cleanup()
     pthread_join(getThread,NULL);
     pthread_join(printThread,NULL);
     queue_close(Ready_Queue);
-    list_close(Thread_List);
     queue_close(Io_Blk_Queue);
     queue_close(Print_Blk_Queue);
+    list_close(Thread_List);
     free(Current_Thread);
 }
 //*************************************
@@ -215,6 +227,22 @@ void mythread_yield()
     Current_Thread = (thread_t *)queue_remove(Ready_Queue);
     while (Current_Thread == NULL)
     {
+        Current_Thread = (thread_t *)queue_remove(Ready_Queue);
+    }
+    //does a busy wait... but its okay
+    while (Current_Thread->state == SLEEPING)
+    {
+        //keep it sleeping if the time to end is not expired yet
+        time(&CurrentTime); //gets the current Time
+        //if the time has not expired yet...
+        if(difftime(Current_Thread->endTime, CurrentTime) > 0)
+            queue_insert(Ready_Queue, Current_Thread);
+        else //it is finished sleeeping
+        {
+            Current_Thread->state = READY_TO_RUN;
+            queue_insert(Ready_Queue, Current_Thread);
+        }
+        //get the next thread in the Q
         Current_Thread = (thread_t *)queue_remove(Ready_Queue);
     }
 
@@ -351,21 +379,24 @@ void* consumer(void* Q)
             {
                 fgets(block->str, block->number, stdin);
                 block->threadControlBock->return_val = block->str;
+                
+                block->threadControlBock->state = READY_TO_RUN;
+            }
+            else if(block->operationType == MYPRINTS)
+            {
+                printf("%s", block->str);
+                usleep(100000); //this helps it not go crazy on test 7
+                    
+                block->threadControlBock->state = READY_TO_RUN;
+            }
+            else if(block->operationType == MYSLEEP)
+            {
+                //we set the state to sleeping then set the time it will wakeup
+                block->threadControlBock->state = SLEEPING;
+                block->threadControlBock->endTime = time(&CurrentTime) + (block->number); 
+                //gets the current time + when it needs to end and stores it
             }
             
-            else //if its MySleep or MyPrints
-            {
-                if(block->operationType == MYPRINTS)
-                {
-                    printf("%s", block->str);
-                    usleep(100000); //this helps it not go crazy on test 7
-                }
-                if(block->operationType == MYSLEEP)
-                {
-                    usleep((block->number)*600000); //count up by 1 second intervals test8
-                }
-            }
-            block->threadControlBock->state = READY_TO_RUN;
             queue_insert(Ready_Queue, block->threadControlBock);
             
             free(block);

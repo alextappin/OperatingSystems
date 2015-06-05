@@ -1,3 +1,11 @@
+/**********************
+ * Alexander Tappin
+ * mythreadio
+ * June 2, 2015
+ * Phil Howard
+ * Operating Systems
+**********************/
+
 #pragma once
 #include "sched.h"
 #include "stdlib.h"
