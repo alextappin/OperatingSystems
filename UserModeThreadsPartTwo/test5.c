@@ -10,7 +10,7 @@ void *thread_test(void *arg)
 
     while (--count)
     {
-        printf("Counting down: %d\n", count);
+        printf("Counting down: %ld\n", count);
         mythread_yield();
     }
 

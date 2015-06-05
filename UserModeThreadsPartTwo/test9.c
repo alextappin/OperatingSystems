@@ -13,7 +13,7 @@ void *write_thread(void *arg)
 
     while (++count)
     {
-        sprintf(buff, "%ld Counting up: %d\n", delay, count);
+        sprintf(buff, "%ld Counting up: %ld\n", delay, count);
         mysleep(delay);
         myprints(buff);
     }

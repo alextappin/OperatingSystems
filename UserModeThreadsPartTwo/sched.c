@@ -121,11 +121,13 @@ void mythread_cleanup()
 {
     queue_mark_closed(Ready_Queue);
     queue_mark_closed(Io_Blk_Queue);
+    queue_mark_closed(Print_Blk_Queue);
     pthread_join(getThread,NULL);
     pthread_join(printThread,NULL);
     queue_close(Ready_Queue);
     list_close(Thread_List);
     queue_close(Io_Blk_Queue);
+    queue_close(Print_Blk_Queue);
     free(Current_Thread);
 }
 //*************************************
@@ -316,8 +318,7 @@ void mythread_detach(unsigned long thread_id)
     if (thread != NULL) thread->is_detached = 1;
 }
 
-//This is going to queue the requests and then calls yield to give 
-//up the cpu until the request is complete
+//initiallizes a new ioblock and puts it into the correct q
 void mythread_io(char* str, int sizeTime, int operationType)
 {
     io_blk *Io_Blk;
@@ -356,10 +357,12 @@ void* consumer(void* Q)
             {
                 if(block->operationType == MYPRINTS)
                 {
-                    //grab from queue and print, then put the thread control block back 
                     printf("%s", block->str);
-                    //or 600000
-                    usleep(100000);
+                    usleep(100000); //this helps it not go crazy on test 7
+                }
+                if(block->operationType == MYSLEEP)
+                {
+                    usleep((block->number)*600000); //count up by 1 second intervals test8
                 }
             }
             block->threadControlBock->state = READY_TO_RUN;
